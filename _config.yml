@@ -6,9 +6,9 @@
 # https://learn-the-web.algonquindesign.ca/topics/markdown-yaml-cheat-sheet/#yaml
 # https://learnxinyminutes.com/docs/yaml/
 
-title: Bitwise Thoughts of a Theoretical Physicist 
-description: A space where I discuss things I find interesting. It will sample ideas from the machine learning and programming spaces.
-github_username: chammaaomar
+title: "Bitwise Thoughts of a Theoretical Physicist" 
+description: "A space where I discuss things I find interesting. I will mostly discuss ideas related to programming and machine learning."
+github_username: "chammaaomar"
 
 # Email and twitter are optional:
 email: chammaa.omar@gmail.com
