@@ -12,9 +12,9 @@ When I first saw the book I essentially judged it by its cover. I could not take
 
 ## Interesting things I have learnt
 
-As I previously discussed, I had already learnt some C/C++ prior to reading the book, so it was more to refine knowledge I had already gained, rather than start from point zero. Thus, I will include some particularly interesting and insightful things I have gained from the book. Nothing fundemental, just *ohhhh, sh#$%t* moments.
+As I previously discussed, I had already learnt some C/C++ prior to reading the book, so it was more to refine knowledge I had already gained, rather than start from scratch. Thus, I will include some particularly interesting and insightful things I have gained from the book. Nothing fundemental, just *ohhhh, sh#$%t* moments.
 
-### String literals
+### String literals and copying
 
 Consider the following piece of code, in which you have a string "123", and you want to cyclically permute it to "231"
 
@@ -39,43 +39,11 @@ char str[] = "123";
 
 This will result in allocating 4 bytes of memory in the stack[^3], and copying the contents of the string literal unto the stack. Now, you can modify it. Thus, if you use `char*`, you are declaring a pointer to read-only memory, whereas declaring with `char str[]`, you copy its content to read-write memory in the stack. A bit tricky.
 
-### 
+Alternatively, if you need to copy a string at run-time, *i.e.* dynamically, you cannot use the `char[]` declaration, because that requires the size to be a compile-time constant, and as we saw above, if you use `char*`, it is just a pointer to some other location in memory, perhaps ROM, so you do not own your data and it can be easily overwritten. Thus, C offers `strdup`. This has signature `char * strdup(const char* str)` and returns a pointer to the dynamically allocated memory on heap where a copy of `str` is made. Since it is on the heap, do not forget to de-allocate with `free`. But there you have it, that is how strings are copied in C, both on the stack and heap.
 
-### Macros
+### Expressions have values
 
-Macros are not themselves C code[^4], but are compiler directives. If you haven't seen them, they look like
-
-```c
-#define ADD_2(x) x+2
-```
-The above macro, although can be used like a function, is not a function. A function has its own memory stack and can declare local variables, and sometimes function calls are resolved during linking of object files. For example, if there is `src.c` using a function `myfunc` declared in `security.h` and implemented in `security.c`, the two source files would be separately compiled to object files. The `src.o` object file would contain references to `myfunc`, that upon linking would be resolved. A A macro, on the other hand, is just a text-processing directive that occurs pre-compilation.
-
-The above example is actually not a good way of writing a macro, becuase of operator precedence issues. For example
-
-```c
-#define ADD_2(x) x+2
-
-int main() {
-    int c = 2*ADD_2(20);
-    return c;
-}
-```
-
-That looks like it should return `2*(20+2) == 44`, however, the compiler literally replaces the macro with the target text, so we instead get `2*20+2 == 42`. Thus, the macro should be wrapped in parentheses
-```c
-#define ADD_2(x) (x+2)
-```
-
-However, this doesn't completely solve operator precedence issues. Consider the following usage example
-
-```c
-ADD_2(2*3)
-```
-
-You would expect to get `2+2 == 4`, however, you actually get `2*3+2`
-
-For the above scenarios, macros have been pretty much made obsolete in C++ by the introduction of `inline` functions. This is a hint to the compiler that it should replace every call to the target function by its actual block of code, to avoid function call overhead. I suspect this is best done if a function is called inside a loop, but this optimization may be carried out by the compiler anyway. However, keep in mind that inlining is simply a hint to the compiler. If the function logic is too complex, the compiler may decide to ignore the hint. Sometimes, a function may not even be inlined, such as a recursive function.
-
+A C expression like `2+2` clearly has the value 4. By an expression, I mean a sequence of operators and the operands on which they act. Consider the following expression `x = 4`. Does it have a value? This assigns the `int x` to `4`, but the value of this expression is also `4`. So, we can write the following `y = (x = 4)`, and it assigns both `x` and `y` to `4`. A common use case of this idea is the two increment expressions `++x` and `x++`. They both increment `x`, however, these expressions have different *values*. The first expression increments `x` *then* returns its value, whereas the latter returns the value of `x` *then* increments, so if `x` is a pointer, `(++x) - (x++) == sizeof(*x)`.
 
 ### Pointer arithmetic is commutative and pointers decay
 
@@ -95,7 +63,7 @@ int main() {
 
 Thus you can index using `funny_c[3]` or `3[funny_c]`, because subscription into an array is simply implemented with pointer arithmetic. Note that the expression `funny_c + 3` should be read as `funny_c + 3 * sizeof(*funny_c)`, so for a `char` pointer, it would be displaced by 3 bytes, whereas for an `int` pointer, it would be displaced by 12 bytes.
 
-Another thing to keep in mind with arrays is their classic decay into pointers when passed into functions, however they are not actually themselves pointers: A pointer can be assigned to point elsewhere in memory, however an array does not accept assignment. Additionally, a pointer `p` itself exists as an object in memory, so if you take its address via `&p`, it will be an object living elsewhere in memory. For example
+Another thing to keep in mind with arrays is their classic decay into pointers when passed into functions. They however are not actually themselves pointers: A pointer can be assigned to point elsewhere in memory, however an array does not accept assignment. Additionally, a pointer `p` itself exists as an object in memory, so if you take its address via `&p`, it will be an object living elsewhere in memory. For example
 
 ```c
 #include <stdio.h>
@@ -111,9 +79,9 @@ int main() {
 }
 ```
 
-On my system, I get the for the pointer `p` that "pointer points to 0x7ffeed4cda*08* and lives at: 0x7ffeed4cda*00*". However, for the array name, I get " "arr points to 0x7ffee5dcd9fc, and lives at 0x7ffee5dcd9fc". So the array does not exist as a pointer variable elsewhere in memory. So, arrays decay to pointers when passed to functions, and their names can be used as pointers, but they are not pointers.
+On my system, I get the for the pointer `p` that "pointer points to 0x7ffeed4cda*08* and lives at: 0x7ffeed4cda*00*". However, for the array name, I get " "arr points to 0x7ffee5dcd9fc, and lives at 0x7ffee5dcd9fc". The array does not exist as a pointer variable elsewhere in memory. So, arrays decay to pointers when passed to functions, and their names can be used as pointers, but they are not pointers.
 
-It is important to know that pointers are themselves objects, because then it is clear that pointers are passed to functions by value. So, when a pointer is passed into a function, the pointer itself is copied to the function stack, so if it's is modified inside the function, *e.g.* `++p`, you don't lose access to your original data.
+It is important to know that pointers are themselves objects, because then it is clear that pointers are passed to functions by value. So, when a pointer is passed into a function, the pointer itself is copied to the function stack, so if it is modified inside the function, *e.g.* `++p`, you do not lose access to your original data.
 
 ### Function Pointers
 
@@ -129,7 +97,7 @@ int main() {
     return 0;
 }
 ```
-prints "the function add_4 lives at: 0x1017b9f20". Technically speaking, you can indeed access the function by dereferencing the function pointer, however `(&add_4)(7) == add_4(7)`, so it is not necessary. Function pointers allow you to pass function as function arguments. When declaring a function parameter, you would declare for exmaple `int *f_ptr (int)`. Additionally, you can construct an array of function pointers. They would all have to have the same signature, *i.e.* same parameter types and return types. A typical declaration looks like `int (*funcptr_arr[3]) (int, int)`. Such a container is useful because it can make your program easily extensible and scalable, as opposed to a branch if/else or switch logic. Below we show an example, where we have an instruction consisting of two operands and an operation to perform on them.
+prints "the function add_4 lives at: 0x1017b9f20". Technically speaking, you can indeed access the function by dereferencing the function pointer, however `(&add_4)(7) == add_4(7)`, so it is not necessary. Function pointers allow you to pass function as function arguments. When declaring a function parameter, you would declare for exmaple `int *f_ptr (int)`. Additionally, you can construct an array of function pointers. They must all have to have the same signature, *i.e.* same parameter types and return types. A typical declaration looks like `int (*funcptr_arr[3]) (int, int)`. Such a container is useful because it can make your program easily extensible and scalable, as opposed to a branch if/else or switch logic. Below we show an example, where we have an instruction consisting of two operands and an operation to perform on them.
 
 ```c
 
@@ -178,11 +146,20 @@ int carry_out(instruction inst) {
     return ops[instruction.OP](inst.operand1, inst,operand2);
 }
 
+int main() {
+    instruction inst1 = {5, 4, ADD};
+    instruction inst2 = {9, 8, SUB};
+    int res1 = carry_out(inst1); // == 9
+    int res2 = carry_out(inst2); // == 1
+
 
 
 ```
 
-So function pointers make functions almost first-class citzens in C. They're still not quite first-class as in Python, due to the absence of closure in C, *i.e.* you cannot define a function inside another function like you do with other data types.
+Note that the above construction makes it easy to add additional instructions; you simply append an operation to the OP `enum` and a function pointer to the `ops` array of function pointers. For example, you can add a bitwise OR operation.
+
+Function pointers make functions almost first-class citzens in C. They're still not quite first-class as in Python, due to the absence of closure in C, *i.e.* you cannot define a function inside another function like you do with other data types. It can only be defined in the global scope.
+
 
 ---
 
@@ -194,4 +171,4 @@ So function pointers make functions almost first-class citzens in C. They're sti
 
 [^3]: The fourth byte if for the null terminator '\0', with which c-strings always end.
 
-[^4]: By that I mean they don't have to consist of valid C code, for example `#define weird if (x<)` is a valid macro, in spite of not having balanced parentheses. Additionally, they don't have to end with semi-colons
+[^4]: By that I mean they don't have to consist of valid C code, for example `#define WEIRD if (x<)` is a valid macro, in spite of not having balanced parentheses. Additionally, they don't have to end with semi-colons
