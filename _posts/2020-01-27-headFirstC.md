@@ -18,7 +18,7 @@ As I previously discussed, I had already learnt some C/C++ prior to reading the 
 
 ### String literals and copying
 
-Consider the following piece of code, in which you have a string "123", and you want to cyclically permute it to "231"
+Consider the following simple piece of code, in which you have a string "123", and you want to cyclically permute it to "231"
 
 ```c
 int main() {
@@ -41,7 +41,7 @@ char str[] = "123";
 
 This will result in allocating 4 bytes of memory in the stack[^3], and copying the contents of the string literal unto the stack. Now, you can modify it. Thus, if you use `char*`, you are declaring a pointer to read-only memory, whereas declaring with `char str[]`, you copy its content to read-write memory in the stack. A bit tricky.
 
-Alternatively, if you need to copy a string at run-time, *i.e.* dynamically, you cannot use the `char[]` declaration, because that requires the size to be a compile-time constant, and as we saw above, if you use `char*`, it is just a pointer to some other location in memory, perhaps ROM, so you do not own your data and it can be easily overwritten. Thus, C offers `strdup`. This has signature `char * strdup(const char* str)` and returns a pointer to the dynamically allocated memory on heap where a copy of `str` is made. Since it is on the heap, do not forget to de-allocate with `free`. But there you have it, that is how strings are copied in C, both on the stack and heap.
+Alternatively, if you need to copy a string at run-time, *i.e.* dynamically, you cannot use the `char[]` declaration; such a declaration requires the array size to be a known at compile-time, and as we saw above, if you use `char*`, it is just a pointer to some other location in memory, perhaps ROM, so you do not own your data and it can be easily overwritten. Thus, C offers `strdup` in header `<string.h>`. This has signature `char * strdup(const char* str)` and returns a pointer to the dynamically allocated memory on heap where a copy of `str` is made. Since it is on the heap, do not forget to de-allocate with `free`. But there you have it, that is how strings are copied in C, both on the stack and heap.
 
 ### Expressions have values
 
@@ -79,9 +79,9 @@ int x = 4
 int c = SQUARE(x+1);
 return c;
 ```
-You would expect to get 25, however, you actually get `4+1*4+1 == 9`. Hence, you should wrap the 'parameter' of the macro in parentheses, like that `#define SQUARE(x) (x)*(x)`.
+You would expect to get 25, however, you actually get `4+1*4+1 == 9`. Hence, you should wrap the 'parameter' of the macro in parentheses, like that `#define SQUARE(x) ((x)*(x))`.
 
-For the above scenarios, *i.e.* simple one-line functions macros have been pretty much made obsolete in C++ by the introduction of `inline` functions and lambda functions. the `inline` specifier is a hint to the compiler that it should replace every call to the target function by its actual block of code, to avoid function call overhead. I suspect this is best done if a function is called inside a loop, but this optimization may be carried out by the compiler anyway. However, keep in mind that inlining is simply a hint to the compiler. If the function logic is too complex, the compiler may decide to ignore the hint. Sometimes, a function may not even be inlined, such as a recursive function.
+For the above scenarios, *i.e.* simple one-line functions, macros have been pretty much made obsolete in C++ by the introduction of `inline` functions and lambda functions. the `inline` specifier is a hint to the compiler that it should replace every call to the target function by its actual block of code, to avoid function call overhead. I suspect this is best done if a function is called inside a loop, but this optimization may be carried out by the compiler anyway. However, keep in mind that inlining is simply a hint to the compiler. If the function logic is too complex, the compiler may decide to ignore the hint. Sometimes, a function may not even be inlined, such as a recursive function.
 
 ### Pointer arithmetic is commutative and pointers decay
 
@@ -119,7 +119,7 @@ int main() {
 
 On my system, I get the for the pointer `p` that "pointer points to 0x7ffeed4cda*08* and lives at: 0x7ffeed4cda*00*". However, for the array name, I get " "arr points to 0x7ffee5dcd9fc, and lives at 0x7ffee5dcd9fc". The array does not exist as a pointer variable elsewhere in memory. So, arrays decay to pointers when passed to functions, and their names can be used as pointers, but they are not pointers.
 
-It is important to know that pointers are themselves objects, because then it is clear that pointers are passed to functions by value. So, when a pointer is passed into a function, the pointer itself is copied to the function stack, so if it is modified inside the function, *e.g.* `++p`, you do not lose access to your original data.
+It is important to know that pointers are themselves objects, because then it is clear that pointers are passed to functions by value. So, when a pointer is passed to a function, the pointer itself is copied to the function stack, so if it is modified inside the function, *e.g.* `++p`, you do not lose access to your original data.
 
 ### Function Pointers
 
@@ -135,7 +135,7 @@ int main() {
     return 0;
 }
 ```
-prints "the function add_4 lives at: 0x1017b9f20". Technically speaking, you can indeed access the function by dereferencing the function pointer, however `(&add_4)(7) == add_4(7)`, so it is not necessary. Function pointers allow you to pass function as function arguments. When declaring a function parameter, you would declare for exmaple `int *f_ptr (int)`. Additionally, you can construct an array of function pointers. They must all have to have the same signature, *i.e.* same parameter types and return types. A typical declaration looks like `int (*funcptr_arr[3]) (int, int)`. Such a container is useful because it can make your program easily extensible and scalable, as opposed to a branch if/else or switch logic. Below we show an example, where we have an instruction consisting of two operands and an operation to perform on them.
+prints "the function add_4 lives at: 0x1017b9f20". Technically speaking, you can indeed access the function by dereferencing the function pointer, however `(&add_4)(7) == add_4(7)`, so it is not necessary. Function pointers allow you to pass function as function arguments. When declaring a function parameter, you would declare for exmaple `int *f_ptr (int)`. Additionally, you can construct an array of function pointers. They must all have the same signature, *i.e.* same parameter types and return types. A typical declaration looks like `int (*funcptr_arr[3]) (int, int)`. Such a container is useful because it can make your program easily extensible and scalable, as opposed to a branch if/else or switch logic. Below we show an example, where we have an instruction consisting of two operands and an operation to perform on them.
 
 ```c
 
@@ -200,7 +200,11 @@ Function pointers make functions almost first-class citzens in C. They're still 
 
 ---
 
+
 I hope some of these were interesting and somewhat enlightening. I am definitely enjoying learning about C. As a bonus, the deeper understanding you have of C, the more deeply you will understand UNIX, given it is implemented in C. I will continue to study this book and other resources, and will be sure to keep y'all up-to-date with my journey. For now, that's all folks![^5]
+
+---
+
 
 [^0]: Yes, I need to read Kerrigan and Ritchie. I don't know why I haven't yet. I'll get around to it, I promise.
 
@@ -208,7 +212,7 @@ I hope some of these were interesting and somewhat enlightening. I am definitely
 
 [^2]: The first time I learnt about this was when comparing the performance of an implementation of the Fibonnaci sequence in Python to one in C. The former can return a Python `int`, whereas the latter would return a `double` or a `long long int`. If you declare the C version to return
 
-[^3]: The fourth byte if for the null terminator '\0', with which c-strings always end.
+[^3]: The fourth byte is for the null terminator '\0', with which c-strings always end.
 
 [^4]: By that I mean they don't have to consist of valid C code, for example `#define WEIRD if (x<)` is a valid macro, in spite of not having balanced parentheses. Additionally, they don't have to end with semi-colons
 
