@@ -1,7 +1,13 @@
-Hello and welcome to this blog. Edit the `index.md` file to change this content. All pages on the blog, including this one, use [Markdown](https://guides.github.com/features/mastering-markdown/). You can include images:
+01010111 01100101 01101100 01100011 01101111 01101101 01100101
 
-![Image of fast.ai logo](images/logo.png)
+00100000
 
-## This is a title
+01110100 01101111
 
-And you can include links, like this [link to fast.ai](https://www.fast.ai). Posts will appear after this file. 
+00100000
+
+01101101 01111001
+
+00100000 
+
+01100010 01101100 01101111 01100111
