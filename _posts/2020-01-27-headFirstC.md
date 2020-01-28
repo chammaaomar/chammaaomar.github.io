@@ -1,5 +1,10 @@
 # Head First C
 
+1. TOC
+{:toc}
+
+---
+
 ## Why C?
 
 For a pretty long time, I had been trying to find a good book from which to learn the C programming language[^0]. As a scientist trained in physics and mathematics, I have always been interested in computational programming, and arguably there is no language better than C to carry that out. For example, the `sklearn` and `scipy` libraries in Python are really well-documented and intuitive Python APIs wrapping C code, or have Cython pieces[^1].
