@@ -205,6 +205,8 @@ Function pointers make functions almost first-class citzens in C. They're still 
 
 ---
 
+## Conclusion
+
 
 I hope some of these were interesting and somewhat enlightening. I am definitely enjoying learning about C. As a bonus, the deeper understanding you have of C, the more deeply you will understand UNIX, given it is implemented in C. I will continue to study this book and other resources, and will be sure to keep y'all up-to-date with my journey. For now, that's all folks![^5]
 
