@@ -2,17 +2,19 @@
 
 ## Why C?
 
-For a pretty long time, I had been trying to find a good book from which to learn the C programming language. As a scientist trained in physics and mathematics, I have always been interested in computational programming, and there is no modern language better than C to carry that out. For example, the `sklearn` and `scipy` libraries in Python are really well-documented and intuitive Python APIs wrapping C code, or have Cython pieces[^1]. Additionally, when I first learned programming, I learnt it in Python. The advantage is that Python allows you to just get started without having to worry about the nitty-gritty; it just abstracts all that for you. For example, since [PEP 237](https://www.python.org/dev/peps/pep-0237/), a Python `int` no longer overflows if the result cannot be held by a C `long int`, and instead its capacity is limited by the available memory, rendering it effectively unlimited precision. The programmer thus needn't worry about `int`, `short int`, `long int`, `long long int` and so on[^2].
+For a pretty long time, I had been trying to find a good book from which to learn the C programming language[^0]. As a scientist trained in physics and mathematics, I have always been interested in computational programming, and arguably there is no language better than C to carry that out. For example, the `sklearn` and `scipy` libraries in Python are really well-documented and intuitive Python APIs wrapping C code, or have Cython pieces[^1]. Additionally, when I first learned programming, I learnt it in Python. The advantage is that Python allows you to just get started without having to worry about the nitty-gritty; it just abstracts all that for you. For example, since [PEP 237](https://www.python.org/dev/peps/pep-0237/), a Python `int` no longer overflows if the result cannot be held by a C `long int`, and instead its capacity is limited by the available memory, rendering it effectively unlimited precision. The programmer thus needn't worry about `int`, `short int`, `long int`, `long long int` and so on[^2].
 
 Thus I wanted to learn more about what is going on under the hood, which I hope would overall make me a better programmer. To that end, I started learning more about C and hardware. I have started learning about hardware via **Inside The Machine** by Jon Stokes and watching some *assembly* game programming on Computerphile (yes, there is such thing).
 
+I have already learned some C++ through another excellent O'Reailly book "Effective Modern C++: 42 Specific Ways to Improve Your Use of C++11 and C++14" by Robert Myers, which I highly recommend, and by watching many Cppcon talks. 
+
 ## The Book
 
-When I first saw the book I essentially judged it by its cover. I could not take it seriously, but I really am glad I decided to give it a shot.
+When I first saw the book I essentially judged it by its cover. I could not take it seriously, but I really am glad I decided to give it a shot. It has a light-hearted, conversational tone that keeps you engaged and many interesting exercises sprinkled throughout the text to keep you actively learning. As a bonus, it features a colorful cast of characters to aid you through your C journey; it is not a road want to walk alone.
 
 ## Interesting things I have learnt
 
-As I previously discussed, I had already learnt some C/C++ prior to reading the book, so it was more to refine knowledge I had already gained, rather than start from scratch. Thus, I will include some particularly interesting and insightful things I have gained from the book. Nothing fundemental, just *ohhhh, sh#$%t* moments.
+As I previously discussed, I had already learnt some C/C++ prior to reading the book, so it was more to refine and deepen knowledge I had already gained, rather than start from scratch. Thus, I will include some particularly interesting and insightful things I have gained from the book. Nothing fundemental, just *ohhhh ok that's how that works* moments.
 
 ### String literals and copying
 
@@ -44,6 +46,42 @@ Alternatively, if you need to copy a string at run-time, *i.e.* dynamically, you
 ### Expressions have values
 
 A C expression like `2+2` clearly has the value 4. By an expression, I mean a sequence of operators and the operands on which they act. Consider the following expression `x = 4`. Does it have a value? This assigns the `int x` to `4`, but the value of this expression is also `4`. So, we can write the following `y = (x = 4)`, and it assigns both `x` and `y` to `4`. A common use case of this idea is the two increment expressions `++x` and `x++`. They both increment `x`, however, these expressions have different *values*. The first expression increments `x` *then* returns its value, whereas the latter returns the value of `x` *then* increments, so if `x` is a pointer, `(++x) - (x++) == sizeof(*x)`.
+
+### Macros
+
+Macros are not themselves C code[^4], but are compiler directives. If you haven't seen them, they look like
+
+```c
+#define SQUARE(x) x*x
+```
+The above macro, although can be used like a function, is not a function. A function has its own memory stack and can declare local variables, and sometimes function calls are resolved during linking of object files. For example, if there is `protocol.c` using a function `encrypt` declared in `security.h` and implemented in `security.c`, the two source files would be separately compiled to object files. The `protocol.o` object file would contain references to `myfunc`, that would be resolved upon linking. A macro, on the other hand, is just a text-processing directive that occurs pre-compilation. Macros are conventionally UPPERCASE.
+
+The above example is actually not a good way of writing a macro, becuase of operator precedence issues. For example
+
+```c
+#define SQUARE(x) x*x
+int main() {
+    int z = 4;
+    size_t c = sizeof SQUARE(z);
+    return c;
+}
+```
+
+That looks like it should return `sizeof(int) == 4`, however, the compiler literally replaces the macro with the target text, so we instead get `size of 4*4`, which due to operator precedence, returns 16. Thus, the macro should be wrapped in parentheses
+```c
+#define SQUARE(x) (x*x)
+```
+
+However, this doesn't completely solve operator precedence issues. Consider the following usage example
+
+```c
+int x = 4
+int c = SQUARE(x+1);
+return c;
+```
+You would expect to get 25, however, you actually get `4+1*4+1 == 9`. Hence, you should wrap the 'parameter' of the macro in parentheses, like that `#define SQUARE(x) (x)*(x)`.
+
+For the above scenarios, *i.e.* simple one-line functions macros have been pretty much made obsolete in C++ by the introduction of `inline` functions and lambda functions. the `inline` specifier is a hint to the compiler that it should replace every call to the target function by its actual block of code, to avoid function call overhead. I suspect this is best done if a function is called inside a loop, but this optimization may be carried out by the compiler anyway. However, keep in mind that inlining is simply a hint to the compiler. If the function logic is too complex, the compiler may decide to ignore the hint. Sometimes, a function may not even be inlined, such as a recursive function.
 
 ### Pointer arithmetic is commutative and pointers decay
 
@@ -160,10 +198,11 @@ Note that the above construction makes it easy to add additional instructions; y
 
 Function pointers make functions almost first-class citzens in C. They're still not quite first-class as in Python, due to the absence of closure in C, *i.e.* you cannot define a function inside another function like you do with other data types. It can only be defined in the global scope.
 
-
 ---
 
+I hope some of these were interesting and somewhat enlightening. I am definitely enjoying learning about C. As a bonus, the deeper understanding you have of C, the more deeply you will understand UNIX, given it is implemented in C. I will continue to study this book and other resources, and will be sure to keep y'all up-to-date with my journey. For now, that's all folks![^5]
 
+[^0]: Yes, I need to read Kerrigan and Ritchie. I don't know why I haven't yet. I'll get around to it, I promise.
 
 [^1]: Cython is a superset of the C programming language that allows combining C/C++ and Python code in the same source file. If you look at the source code of `scipy`, for example, `.pyx` source code is Cython. It can speed up Python code significantly via pre-compilation, static typing etc, and offers better memory management by using C types, but still allows access to your favorite Python objects such as dicts and lists. For more on Cython, click [here](www.cython.org)
 
@@ -172,3 +211,5 @@ Function pointers make functions almost first-class citzens in C. They're still 
 [^3]: The fourth byte if for the null terminator '\0', with which c-strings always end.
 
 [^4]: By that I mean they don't have to consist of valid C code, for example `#define WEIRD if (x<)` is a valid macro, in spite of not having balanced parentheses. Additionally, they don't have to end with semi-colons
+
+[^5]: Am I trying too hard to sound cool?
